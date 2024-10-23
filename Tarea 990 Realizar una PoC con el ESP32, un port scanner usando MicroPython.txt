@@ -1,8 +1,8 @@
-Video de la prueba de concepto del shell reverse en un attiny85 funcionando:
-
+Video de la prueba de concepto del portscanner usando un Esp32, los resultados los sube en automatico a pastebin:
 
 
 https://www.youtube.com/watch?v=9BB8pVN8SX8&t=2s&ab_channel=SerchxD2
+
 
 
 Codigo usado:
