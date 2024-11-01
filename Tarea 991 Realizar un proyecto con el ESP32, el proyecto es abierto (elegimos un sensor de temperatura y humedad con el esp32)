@@ -1,0 +1,68 @@
+Link al Video del ESP32 en acción, realizando las mediciones de la temperatura y humedad, posteriormente estas mediciones se envian por mensaje de discord:
+
+https://youtu.be/mQICCuV183A?si=eJS_S5ifG_PmwW5e
+
+
+
+El codigo que se uso para llevar a cabo dicho proyecto:
+
+import network
+import urequests
+import time
+import json
+from machine import Pin
+import dht
+
+# Configuración del sensor DHT22
+sensor = dht.DHT22(Pin(15))  # Cambia el número de pin si es necesario
+
+# Datos de conexión Wi-Fi
+SSID = 'INFINITUMDC18'  # Cambia esto por tu SSID
+PASSWORD = 'dXXe66aFEE'  # Cambia esto por tu contraseña
+
+# URL del webhook de Discord
+WEBHOOK_URL = 'https://discord.com/api/webhooks/1301056798404513865/uohGQ9UYjH8_dai9Hqhs8xOEqKTFErDstqC-egL8CtaPXmMKnuQtb-lSubrCVxDqy8Xl'
+
+# Conexión a Wi-Fi
+def conectar_wifi():
+    print("Conectando a la red Wi-Fi...")
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(SSID, PASSWORD)
+
+    while not wlan.isconnected():
+        time.sleep(1)
+    print("Conectado a Wi-Fi:", wlan.ifconfig())
+
+# Enviar mensaje a Discord
+def enviar_a_discord(mensaje):
+    headers = {'Content-Type': 'application/json'}
+    data = json.dumps({"content": mensaje})  # Formateo JSON correcto
+    
+    # Codificar los datos a UTF-8
+    response = urequests.post(WEBHOOK_URL, data=data.encode('utf-8'), headers=headers)
+    
+    if response.status_code == 204:
+        print("Mensaje enviado a Discord")
+    else:
+        print("Error al enviar a Discord:", response.text)
+
+# Función principal
+def main():
+    conectar_wifi()
+    while True:
+        sensor.measure()
+        temperatura = sensor.temperature()
+        humedad = sensor.humidity()
+        
+        # Crear mensaje
+        mensaje = f"Temperatura: {temperatura}°C\nHumedad: {humedad}%"
+        
+        # Enviar mensaje a Discord
+        enviar_a_discord(mensaje)
+        
+        # Esperar 60 segundos antes de la siguiente lectura
+        time.sleep(60)
+
+# Ejecutar el programa
+main()
